@@ -210,7 +210,7 @@ def run_measurement_cycle():
             log_content = get_container_logs(aci_client, container_group_name)
             response_time_ms = parse_response_time(log_content)
             if response_time_ms is not None:
-                timestamp = datetime.utcnow().isoformat()
+                timestamp = datetime.datetime.now(datetime.UTC).isoformat()
                 logger.info(f"Measured {response_time_ms}ms for {url} from {region}")
                 # Record metric with additional label for timestamp if needed.
                 webpage_response_time.labels(target=url, region=region, timestamp=timestamp).set(response_time_ms)

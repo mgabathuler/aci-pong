@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aci-pong.fullname" . }}
+  labels:
+    app: {{ include "aci-pong.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "aci-pong.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "aci-pong.name" . }}
+    spec:
+      containers:
+        - name: aci-pong
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: WEBPAGES_CONFIG_PATH
+              value: "/etc/webpages/webpages.txt"
+            - name: AZURE_RESOURCE_GROUP
+              values: {{ .Values.app.azureResourceGroup }}
+            - name: "MEASURE_IMAGE"
+              value: {{ .Values.app.measureImage }}
+          envFrom:
+            {{- if .Values.app.extraEnvs.configMapName }}
+            - configMapRef:
+              name: {{ .Values.}}
+            {{- end }}
+            {{- if .Values.app.extraEnvs.secretName }}
+            - configMapRef:
+              name: {{ .Values.}}
+            {{- end }}  
+          volumeMounts:
+            - name: webpages-config
+              mountPath: /etc/webpages
+              readOnly: true
+      volumes:
+        - name: webpages-config
+          configMap:
+            name: {{ include "aci-pong.fullname" . }}-webpages

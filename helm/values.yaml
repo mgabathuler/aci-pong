@@ -1,0 +1,23 @@
+replicaCount: 1
+
+image:
+  repository: matthiasgabathuler/aci-pong
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+
+app:
+  azureResourceGroup: "my-resourcegroup"
+  measureImage: "docker.io/matthiasgabathuler/aci-pong:measure-0.0.1"
+  # extraEnvs:
+  #   configMapName:
+  #   secretName: 
+
+# List of webpages to monitor; each URL on a new line.
+webpages:
+  data: |
+    https://example.com
+    https://anotherexample.com

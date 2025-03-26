@@ -73,10 +73,10 @@ webpage_response_time = Gauge("webpage_response_time_ms", "Response time in mill
                               ["target", "region", "timestamp"])
 
 # Delay (in seconds) between measurement cycles
-MEASUREMENT_INTERVAL = 15
+MEASUREMENT_INTERVAL = int(os.environ.get("MEASUREMENT_INTERVAL", "15"))
 
 # Maximum number of seconds to wait for an ACI container group job to finish
-ACR_TIMEOUT = 180
+ACR_TIMEOUT = int(os.environ.get("ACR_TIMEOUT", "180"))
 
 # ---------------------------
 # Helper functions
@@ -210,7 +210,7 @@ def run_measurement_cycle():
             log_content = get_container_logs(aci_client, container_group_name)
             response_time_ms = parse_response_time(log_content)
             if response_time_ms is not None:
-                timestamp = datetime.datetime.now(datetime.UTC).isoformat()
+                timestamp = datetime.now(datetime.timezone.utc).isoformat()
                 logger.info(f"Measured {response_time_ms}ms for {url} from {region}")
                 # Record metric with additional label for timestamp if needed.
                 webpage_response_time.labels(target=url, region=region, timestamp=timestamp).set(response_time_ms)

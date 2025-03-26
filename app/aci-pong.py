@@ -73,7 +73,7 @@ webpage_response_time = Gauge("webpage_response_time_ms", "Response time in mill
                               ["target", "region", "timestamp"])
 
 # Delay (in seconds) between measurement cycles
-MEASUREMENT_INTERVAL = int(os.environ.get("MEASUREMENT_INTERVAL", "15"))
+MEASUREMENT_INTERVAL = int(os.environ.get("MEASUREMENT_INTERVAL", "60"))
 
 # Maximum number of seconds to wait for an ACI container group job to finish
 ACR_TIMEOUT = int(os.environ.get("ACR_TIMEOUT", "180"))

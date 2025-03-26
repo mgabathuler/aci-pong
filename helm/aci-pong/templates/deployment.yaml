@@ -27,15 +27,17 @@ spec:
               values: {{ .Values.app.azureResourceGroup }}
             - name: "MEASURE_IMAGE"
               value: {{ .Values.app.measureImage }}
+          {{- if .Values.app.extraEnvs }}
           envFrom:
             {{- if .Values.app.extraEnvs.configMapName }}
             - configMapRef:
-              name: {{ .Values.app.extraEnvs.configMapName }}
+                name: {{ .Values.app.extraEnvs.configMapName }}
             {{- end }}
             {{- if .Values.app.extraEnvs.secretName }}
-            - configMapRef:
-              name: {{ .Values.app.extraEnvs.secretName }}
-            {{- end }}  
+            - secretRef:
+                name: {{ .Values.app.extraEnvs.secretName }}
+            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: webpages-config
               mountPath: /etc/webpages

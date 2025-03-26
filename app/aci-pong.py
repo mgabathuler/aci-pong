@@ -99,13 +99,9 @@ def create_container_group(client, region, url):
     """
     group_name = f"measure-{uuid.uuid4().hex[:8]}"
     container_name = "measure"
-
-    # Command for the container: call the measurement script with the target URL.
-    # The measurement container is expected to output the elapsed time.
-    # In this example, we assume the container has a script at /app/measure.py.
     command = ["python", "/app/measure.py", "--url", url]
 
-    container_resource_requests = ResourceRequests(memory_in_gb=0.5, cpu=0.5)
+    container_resource_requests = ResourceRequests(memory_in_gb=0.1, cpu=0.2)
     container_resources = ResourceRequirements(requests=container_resource_requests)
     container = Container(name=container_name,
                           image=MEASURE_IMAGE,
@@ -120,7 +116,7 @@ def create_container_group(client, region, url):
     )
 
     logger.info(f"Creating container group {group_name} in region {region} for URL {url}")
-    result = client.container_groups.begin_create_or_update(
+    client.container_groups.begin_create_or_update(
         AZURE_RESOURCE_GROUP,
         group_name,
         group
@@ -135,7 +131,10 @@ def wait_for_container_completion(client, container_group_name, container_name="
     start_time = time.time()
     while time.time() - start_time < ACR_TIMEOUT:
         cg = client.container_groups.get(AZURE_RESOURCE_GROUP, container_group_name)
-        container_state = cg.containers[0].instance_view.current_state.state.lower() if cg.containers[0].instance_view else ""
+        if cg.containers[0].instance_view:
+            container_state = cg.containers[0].instance_view.current_state.state.lower()
+        else:
+            container_state = ""
         logger.debug(f"Container {container_group_name} state: {container_state}")
         if container_state in ("terminated", "exited"):
             return True
@@ -166,7 +165,6 @@ def parse_response_time(log_content):
     that is just a float (milliseconds). Customize parsing if needed.
     """
     try:
-        # Remove extra whitespace and possible additional logs
         for line in log_content.splitlines():
             try:
                 value = float(line.strip())
@@ -191,28 +189,25 @@ def run_measurement_cycle():
         logger.error("No webpages defined to monitor.")
         return
 
-    # Set up the Azure Container Instance Management Client
     credential = DefaultAzureCredential()
     aci_client = ContainerInstanceManagementClient(credential, AZURE_SUBSCRIPTION_ID)
 
     for url in webpages:
+        container_group_name = ""  # initialize early for cleanup handling
         region = random.choice(AZURE_REGIONS)
         try:
-            # Create the container group in a chosen region
             container_group_name = create_container_group(aci_client, region, url)
-            # Wait for the container to run until finished.
             completed = wait_for_container_completion(aci_client, container_group_name)
             if not completed:
                 logger.error(f"Timeout waiting for container group {container_group_name} to finish.")
                 continue
 
-            # Get container logs and parse response time
             log_content = get_container_logs(aci_client, container_group_name)
             response_time_ms = parse_response_time(log_content)
             if response_time_ms is not None:
-                timestamp = datetime.now(datetime.timezone.utc).isoformat()
+                # Build a basic UTC timestamp and append "Z" to indicate UTC.
+                timestamp = datetime.now().isoformat()
                 logger.info(f"Measured {response_time_ms}ms for {url} from {region}")
-                # Record metric with additional label for timestamp if needed.
                 webpage_response_time.labels(target=url, region=region, timestamp=timestamp).set(response_time_ms)
             else:
                 logger.error(f"Could not parse response time for {url} in container group {container_group_name}")
@@ -220,23 +215,20 @@ def run_measurement_cycle():
         except Exception as exc:
             logger.error(f"Error running measurement for {url} from region {region}: {exc}")
         finally:
-            # Cleanup: delete the container group
-            try:
-                delete_container_group(aci_client, container_group_name)
-            except Exception as cleanup_error:
-                logger.error(f"Cleanup error for container group {container_group_name}: {cleanup_error}")
+            if container_group_name:
+                try:
+                    delete_container_group(aci_client, container_group_name)
+                except Exception as cleanup_error:
+                    logger.error(f"Cleanup error for container group {container_group_name}: {cleanup_error}")
 
 # ---------------------------
 # Main runner
 # ---------------------------
 
 def main():
-    # Start Prometheus metrics server (exposes /metrics on port 8000)
     start_http_server(8000)
     logger.info("Prometheus metrics server started on port 8000")
 
-    # In a production system you might use a scheduler (e.g., cronjob, Celery beat or APScheduler)
-    # Here we run an infinite loop with a sleep interval.
     while True:
         logger.info("Starting new measurement cycle")
         run_measurement_cycle()

@@ -30,11 +30,11 @@ spec:
           envFrom:
             {{- if .Values.app.extraEnvs.configMapName }}
             - configMapRef:
-              name: {{ .Values.}}
+              name: {{ .Values.app.extraEnvs.configMapName }}
             {{- end }}
             {{- if .Values.app.extraEnvs.secretName }}
             - configMapRef:
-              name: {{ .Values.}}
+              name: {{ .Values.app.extraEnvs.secretName }}
             {{- end }}  
           volumeMounts:
             - name: webpages-config

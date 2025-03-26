@@ -35,7 +35,7 @@ from azure.mgmt.containerinstance.models import (
 from prometheus_client import start_http_server, Gauge
 
 # Setup basic logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # ---------------------------
@@ -73,7 +73,7 @@ webpage_response_time = Gauge("webpage_response_time_ms", "Response time in mill
                               ["target", "region", "timestamp"])
 
 # Delay (in seconds) between measurement cycles
-MEASUREMENT_INTERVAL = 60
+MEASUREMENT_INTERVAL = 15
 
 # Maximum number of seconds to wait for an ACI container group job to finish
 ACR_TIMEOUT = 180

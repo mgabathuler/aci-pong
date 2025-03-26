@@ -13,3 +13,18 @@ spec:
       name: http
   selector:
     app: {{ include "aci-pong.name" . }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "aci-pong.fullname" . }}
+  labels:
+    app: {{ include "aci-pong.name" . }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "aci-pong.fullname" . }}
+  endpoints:
+    - targetPort: http
+      interval: 30s

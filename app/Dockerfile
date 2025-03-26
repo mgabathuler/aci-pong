@@ -1,5 +1,5 @@
 # Use an official Python runtime base image.
-FROM python:3.8-slim
+FROM python:3.13-slim
 
 # Set a working directory in the container.
 WORKDIR /app

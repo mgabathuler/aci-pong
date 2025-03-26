@@ -24,7 +24,7 @@ spec:
             - name: WEBPAGES_CONFIG_PATH
               value: "/etc/webpages/webpages.txt"
             - name: AZURE_RESOURCE_GROUP
-              values: {{ .Values.app.azureResourceGroup }}
+              value: {{ .Values.app.azureResourceGroup }}
             - name: "MEASURE_IMAGE"
               value: {{ .Values.app.measureImage }}
           {{- if .Values.app.extraEnvs }}
